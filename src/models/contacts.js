@@ -1,58 +1,55 @@
-const DB = require("./db");
-const { randomUUID } = require("crypto");
+const { Schema, model } = require("mongoose");
+const Joi = require("joi");
+Joi.objectId = require("joi-objectid")(Joi);
 
-const db = new DB();
+const contactsSchema = Schema(
+  {
+    name: {
+      type: String,
+      required: [true, "Set name for contact"],
+    },
+    email: {
+      type: String,
+    },
+    phone: {
+      type: String,
+    },
+    favorite: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { versionKey: false, timestamps: true }
+);
 
-const listContactsModel = async () => {
-  return await db.readFile();
-};
+const Contacts = model("contact", contactsSchema);
 
-const getContactByIdModel = async (contactId) => {
-  const contacts = await db.readFile();
-  const contact = contacts.find((item) => item.id === contactId);
+const schemaCreateContact = Joi.object({
+  name: Joi.string().min(3).max(30).required(),
+  email: Joi.string().email().required(),
+  phone: Joi.string()
+    .pattern(/[0-9]+/)
+    .required(),
+});
 
-  return contact === undefined ? null : contact;
-};
+const schemaUpdateContact = Joi.object({
+  name: Joi.string().min(3).max(30),
+  email: Joi.string().email(),
+  phone: Joi.string().pattern(/[0-9]+/),
+});
 
-const removeContactModel = async (contactId) => {
-  const contacts = await db.readFile();
-  const index = contacts.findIndex((item) => item.id === contactId);
+const schemaUpdateFavorite = Joi.object({
+  favorite: Joi.bool().required(),
+});
 
-  if (index !== -1) {
-    const [contact] = contacts.splice(index, 1);
-    await db.writeFile(contacts);
-    return contact;
-  }
-
-  return null;
-};
-
-const addContactModel = async (body) => {
-  const contacts = await db.readFile();
-  const newContact = { id: randomUUID(), ...body };
-  contacts.push(newContact);
-
-  await db.writeFile(contacts);
-  return newContact;
-};
-
-const updateContactModel = async (contactId, body) => {
-  const contacts = await db.readFile();
-  const index = contacts.findIndex((item) => item.id === contactId);
-
-  if (index !== -1) {
-    contacts[index] = { ...contacts[index], ...body };
-    await db.writeFile(contacts);
-    return contacts[index];
-  }
-
-  return null;
-};
+const schemaMongoId = Joi.object({
+  id: Joi.objectId().required(),
+});
 
 module.exports = {
-  listContactsModel,
-  getContactByIdModel,
-  removeContactModel,
-  addContactModel,
-  updateContactModel,
+  Contacts,
+  schemaCreateContact,
+  schemaUpdateContact,
+  schemaUpdateFavorite,
+  schemaMongoId,
 };

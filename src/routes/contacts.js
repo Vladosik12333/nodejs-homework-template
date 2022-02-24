@@ -5,23 +5,46 @@ const {
   getContacts,
   getContactById,
   updateContact,
+  updateFavoriteContact,
 } = require("../controllers/contacts");
-const validationBody = require("../middlewares/validation");
+const {
+  validationBody,
+  validationParams,
+} = require("../middlewares/validation");
 const {
   schemaCreateContact,
   schemaUpdateContact,
-} = require("../schemes/contacts");
+  schemaUpdateFavorite,
+  schemaMongoId,
+} = require("../models/contacts");
+const { container } = require("../middlewares/container-ctrl");
 
 const router = express.Router();
 
-router.get("/", getContacts);
+router.get("/", container(getContacts));
 
-router.get("/:id", getContactById);
+router.get("/:id", validationParams(schemaMongoId), container(getContactById));
 
-router.post("/", validationBody(schemaCreateContact), addContact);
+router.post("/", validationBody(schemaCreateContact), container(addContact));
 
-router.delete("/:id", deleteContact);
+router.delete(
+  "/:id",
+  validationParams(schemaMongoId),
+  container(deleteContact)
+);
 
-router.put("/:id", validationBody(schemaUpdateContact), updateContact);
+router.put(
+  "/:id",
+  validationBody(schemaUpdateContact),
+  validationParams(schemaMongoId),
+  container(updateContact)
+);
+
+router.patch(
+  "/:id/favorite",
+  validationBody(schemaUpdateFavorite),
+  validationParams(schemaMongoId),
+  container(updateFavoriteContact)
+);
 
 module.exports = router;

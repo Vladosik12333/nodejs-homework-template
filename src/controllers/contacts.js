@@ -1,18 +1,13 @@
-const {
-  listContactsModel,
-  getContactByIdModel,
-  removeContactModel,
-  addContactModel,
-  updateContactModel,
-} = require("../models/contacts");
+const { Contacts } = require("../models/contacts");
 
-const getContacts = async (req, res) => {
-  const contacts = await listContactsModel();
+const getContacts = async (_, res) => {
+  const contacts = await Contacts.find({});
+
   res.json({ contacts });
 };
 
 const getContactById = async (req, res) => {
-  const contact = await getContactByIdModel(req.params.id);
+  const contact = await Contacts.findById(req.params.id);
 
   contact
     ? res.json({ contact })
@@ -20,7 +15,7 @@ const getContactById = async (req, res) => {
 };
 
 const deleteContact = async (req, res) => {
-  const contact = await removeContactModel(req.params.id);
+  const contact = await Contacts.findByIdAndRemove(req.params.id);
 
   contact
     ? res.json({ message: "Contact deleted" })
@@ -28,13 +23,25 @@ const deleteContact = async (req, res) => {
 };
 
 const addContact = async (req, res) => {
-  const contact = await addContactModel(req.body);
+  const contact = await Contacts.create(req.body);
 
   res.status(201).json({ contact });
 };
 
 const updateContact = async (req, res) => {
-  const contact = await updateContactModel(req.params.id, req.body);
+  const contact = await Contacts.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+  });
+
+  contact
+    ? res.json({ contact })
+    : res.status(404).json({ message: "Not found" });
+};
+
+const updateFavoriteContact = async (req, res) => {
+  const contact = await Contacts.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+  });
 
   contact
     ? res.json({ contact })
@@ -47,4 +54,5 @@ module.exports = {
   deleteContact,
   addContact,
   updateContact,
+  updateFavoriteContact,
 };
