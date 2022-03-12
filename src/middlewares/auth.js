@@ -22,6 +22,7 @@ const auth = async (req, _, next) => {
   } catch (error) {
     if (error.message === "invalid token") {
       error.message = "Not authorized";
+      error.status = 401;
       next(error);
     }
     error.status = 401;
