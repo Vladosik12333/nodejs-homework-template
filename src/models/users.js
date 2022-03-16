@@ -21,6 +21,7 @@ const userSchema = Schema({
     type: String,
     default: null,
   },
+  avatarURL: String,
 });
 
 const schemaPassAndLogin = Joi.object({

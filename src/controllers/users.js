@@ -1,5 +1,9 @@
 const { User } = require("../models/users");
 const bcrypt = require("bcrypt");
+const gravatar = require("gravatar");
+const sharp = require("sharp");
+const fs = require("fs");
+const path = require("path");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
@@ -17,8 +21,16 @@ const signup = async (req, res) => {
 
   const hashPass = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
 
-  const { subscription } = await User.create({ email, password: hashPass });
-  res.status(201).json({
+  const avatar = gravatar.url(email, { s: "100", r: "x", d: "retro" }, true);
+
+  const { subscription } = await User.create({
+    email,
+    password: hashPass,
+    avatarURL: avatar,
+  });
+
+  res.status(201);
+  res.json({
     user: {
       email,
       subscription,
@@ -88,4 +100,24 @@ const updateSub = async (req, res) => {
   });
 };
 
-module.exports = { signup, login, logout, current, updateSub };
+const updateAvatar = async (req, res) => {
+  const { path: tempPath, filename } = req.file;
+  const { _id, email } = req.user;
+
+  const imageName = `${email}_${filename}`;
+
+  const pathAvatar = path.join(__dirname, "../public/avatars", imageName);
+
+  const image = sharp(tempPath);
+  image.resize({ height: 250, width: 250 });
+  await image.toFile(pathAvatar);
+  await fs.unlink(tempPath, () => {});
+
+  const avatarURL = path.join("public", "avatars", imageName);
+
+  await User.findByIdAndUpdate({ _id }, { avatarURL });
+
+  res.json({ avatarURL });
+};
+
+module.exports = { signup, login, logout, current, updateSub, updateAvatar };
