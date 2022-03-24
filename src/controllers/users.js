@@ -5,9 +5,24 @@ const sharp = require("sharp");
 const fs = require("fs");
 const path = require("path");
 const jwt = require("jsonwebtoken");
+const { v4: uuidv4 } = require("uuid");
+const sgMail = require("@sendgrid/mail");
 require("dotenv").config();
 
-const { SECRET_KEY } = process.env;
+const { SECRET_KEY, SENDGRID_KEY } = process.env;
+
+sgMail.setApiKey(SENDGRID_KEY);
+
+const sendEmailVerify = async (email, verificationToken) => {
+  const msg = {
+    to: email,
+    from: "vvllaadd1233345@gmail.com",
+    subject: "Confirm registration",
+    text: `For completly registration click to link: localhost:3000/api/users/verify/${verificationToken}`,
+  };
+
+  await sgMail.send(msg);
+};
 
 const signup = async (req, res) => {
   const { email, password } = req.body;
@@ -23,11 +38,16 @@ const signup = async (req, res) => {
 
   const avatar = gravatar.url(email, { s: "100", r: "x", d: "retro" }, true);
 
+  const verificationToken = uuidv4();
+
   const { subscription } = await User.create({
     email,
     password: hashPass,
     avatarURL: avatar,
+    verificationToken,
   });
+
+  await sendEmailVerify(email, verificationToken);
 
   res.status(201);
   res.json({
@@ -41,7 +61,7 @@ const signup = async (req, res) => {
 const login = async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email, verify: true });
 
   if (!user || !bcrypt.compareSync(password, user.password)) {
     res.status(401).json({ message: "Email or password is wrong" });
@@ -120,4 +140,49 @@ const updateAvatar = async (req, res) => {
   res.json({ avatarURL });
 };
 
-module.exports = { signup, login, logout, current, updateSub, updateAvatar };
+const verification = async (req, res) => {
+  const { verificationToken } = req.params;
+  const user = await User.findOne({ verificationToken, verify: false });
+
+  if (!user) {
+    res.status(404).json({ message: "User not found" });
+    return;
+  }
+
+  await User.findByIdAndUpdate(
+    { _id: user._id },
+    { verificationToken: null, verify: true }
+  );
+
+  res.json({ message: "Verification successful" });
+};
+
+const verificationAgain = async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email, verify: false });
+
+  if (!user) {
+    res.status(400).json({ message: "Verification has already been passed" });
+    return;
+  }
+
+  const verificationToken = uuidv4();
+
+  await User.findByIdAndUpdate({ _id: user._id }, { verificationToken });
+
+  await sendEmailVerify(user.email, verificationToken);
+
+  res.json({ message: "Verification email sent" });
+};
+
+module.exports = {
+  signup,
+  login,
+  logout,
+  current,
+  updateSub,
+  updateAvatar,
+  verification,
+  verificationAgain,
+};
