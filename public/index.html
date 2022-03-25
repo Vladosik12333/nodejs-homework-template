@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web Sockets</title>
+  </head>
+  <style>
+    .section {
+      width: 95vw;
+      height: 95vh;
+      display: flex;
+      justify-content: space-between;
+      flex-direction: column;
+    }
+
+    .list {
+      list-style: none;
+      padding: 0;
+      margin: 0 10px;
+    }
+
+    .listItem {
+      background-color: grey;
+      height: 25px;
+      display: flex;
+      align-items: center;
+      padding-left: 5px;
+    }
+
+    .listItem:nth-child(2n) {
+      background-color: cornflowerblue;
+    }
+
+    .form {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: row;
+    }
+
+    .msg {
+      border-radius: 10px;
+      border: 1px solid grey;
+      width: 70%;
+      height: 20px;
+      padding-left: 10px;
+    }
+
+    .btn {
+      border-radius: 7px;
+      border: 1px solid grey;
+      width: 5%;
+      height: 25px;
+      margin-left: 30px;
+      background-color: greenyellow;
+    }
+    .btn:hover {
+      cursor: pointer;
+    }
+  </style>
+  <body>
+    <main>
+      <section class="section">
+        <ul class="list"></ul>
+        <form class="form">
+          <input class="msg" type="text" placeholder="Your message" />
+          <button class="btn" type="submit">Submit</button>
+        </form>
+      </section>
+    </main>
+    <script
+      src="https://cdn.socket.io/4.4.1/socket.io.min.js"
+      integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H"
+      crossorigin="anonymous"
+    ></script>
+    <script>
+      const socket = io();
+
+      const userName = prompt("What`s your name ?");
+
+      const form = document.querySelector(".form");
+      const input = document.querySelector(".msg");
+      const list = document.querySelector(".list");
+
+      form.addEventListener("submit", (evt) => {
+        evt.preventDefault();
+
+        const message = input.value;
+
+        if (!message)
+          return alert("You need write your message before submit.");
+        socket.emit("MESSAGE", { message, userName });
+        input.value = null;
+      });
+
+      socket.on("CHAT", (newMsg) => {
+        const li = document.createElement("li");
+
+        const userName = newMsg.userName;
+        const message = newMsg.message;
+        li.textContent = `${userName}: ${message}`;
+        li.classList.add("listItem");
+        list.append(li);
+      });
+    </script>
+  </body>
+</html>

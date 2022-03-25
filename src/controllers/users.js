@@ -126,7 +126,7 @@ const updateAvatar = async (req, res) => {
 
   const imageName = `${email}_${filename}`;
 
-  const pathAvatar = path.join(__dirname, "../public/avatars", imageName);
+  const pathAvatar = path.join(__dirname, "../../public/avatars", imageName);
 
   const image = sharp(tempPath);
   image.resize({ height: 250, width: 250 });

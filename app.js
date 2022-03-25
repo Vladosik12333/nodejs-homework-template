@@ -1,19 +1,25 @@
 const express = require("express");
 const logger = require("morgan");
 const cors = require("cors");
-const path = require("path");
+const app = express();
+const server = require("http").createServer(app);
+const io = require("socket.io")(server);
 
 const contactsRouter = require("./src/routes/contacts");
 const usersRouter = require("./src/routes/users");
-
-const app = express();
 
 const formatsLogger = app.get("env") === "development" ? "dev" : "short";
 
 app.use(logger(formatsLogger));
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.resolve("./src/public")));
+app.use(express.static("public"));
+
+io.on("connection", (socket) => {
+  socket.on("MESSAGE", (newMsg) => {
+    io.emit("CHAT", newMsg);
+  });
+});
 
 app.use("/api/contacts", contactsRouter);
 app.use("/api/users", usersRouter);
@@ -28,4 +34,4 @@ app.use((err, _, res, __) => {
   res.status(status).json(message);
 });
 
-module.exports = app;
+module.exports = server;
