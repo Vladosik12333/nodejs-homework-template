@@ -2,8 +2,16 @@ const express = require("express");
 const path = require("path");
 const multer = require("multer");
 
-const { validationBody } = require("../middlewares/validation");
-const { schemaPassAndLogin, schemaUpdateSub } = require("../models/users");
+const {
+  validationBody,
+  validationParams,
+} = require("../middlewares/validation");
+const {
+  schemaPassAndLogin,
+  schemaUpdateSub,
+  schemaVerify,
+  schemaVerifyAgain,
+} = require("../models/users");
 const { container } = require("../middlewares/container-ctrl");
 const { auth } = require("../middlewares/auth");
 const {
@@ -13,6 +21,8 @@ const {
   current,
   updateSub,
   updateAvatar,
+  verification,
+  verificationAgain,
 } = require("../controllers/users");
 
 const router = express.Router();
@@ -43,6 +53,16 @@ router.patch(
   auth,
   upload.single("avatar"),
   container(updateAvatar)
+);
+router.get(
+  "/verify/:verificationToken",
+  validationParams(schemaVerify),
+  container(verification)
+);
+router.post(
+  "/verify",
+  validationBody(schemaVerifyAgain),
+  container(verificationAgain)
 );
 
 module.exports = router;
